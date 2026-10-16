@@ -1,0 +1,19 @@
+{
+  "name": "kirana",
+  "version": "0.1.0",
+  "description": "Kirana - bot Discord Nismara Transport untuk memantau server ETS2 & ATS lewat GameMonitoring",
+  "type": "module",
+  "main": "src/index.js",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "deploy": "node src/deploy-commands.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0"
+  }
+}
