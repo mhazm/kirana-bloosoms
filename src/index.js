@@ -1,5 +1,5 @@
 import process from 'node:process';
-import { Client, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
+import { Client, Events, GatewayIntentBits, MessageFlags, Options } from 'discord.js';
 import { config } from './config.js';
 import { commandMap } from './commands/index.js';
 import { closeDatabase } from './database.js';
@@ -7,7 +7,39 @@ import { ServerMonitor } from './services/monitor.js';
 import { errorEmbed } from './utils/embeds.js';
 import { logger } from './utils/logger.js';
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const isSelf = (entity) => entity.id === entity.client.user.id;
+
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds],
+  // Kirana hanya butuh channel & role (untuk cek permission) dan dirinya sendiri.
+  // Cache lain dimatikan supaya RAM tetap kecil; pesan diedit/dihapus via ID lewat REST.
+  makeCache: Options.cacheWithLimits({
+    ...Options.DefaultMakeCacheSettings,
+    MessageManager: 0,
+    ReactionManager: 0,
+    ReactionUserManager: 0,
+    PresenceManager: 0,
+    VoiceStateManager: 0,
+    ThreadManager: 0,
+    ThreadMemberManager: 0,
+    GuildEmojiManager: 0,
+    GuildStickerManager: 0,
+    GuildScheduledEventManager: 0,
+    StageInstanceManager: 0,
+    GuildInviteManager: 0,
+    GuildBanManager: 0,
+    AutoModerationRuleManager: 0,
+    ApplicationCommandManager: 0,
+    BaseGuildEmojiManager: 0,
+    GuildMemberManager: { maxSize: 1, keepOverLimit: isSelf },
+    UserManager: { maxSize: 1, keepOverLimit: isSelf },
+  }),
+  sweepers: {
+    ...Options.DefaultSweeperSettings,
+    users: { interval: 3_600, filter: () => (user) => !isSelf(user) },
+    guildMembers: { interval: 3_600, filter: () => (member) => !isSelf(member) },
+  },
+});
 
 client.monitor = new ServerMonitor(client, {
   guildId: config.guildId,

@@ -67,13 +67,39 @@ Command `/config` dan `/server` hanya bisa dipakai member dengan izin **Manage S
 
 **Mencari ID GameMonitoring:** buka halaman server di gamemonitoring.net. ID-nya adalah angka di URL, misalnya `gamemonitoring.net/euro-truck-simulator-2/servers/`**`1234567`**.
 
-## Menjalankan 24/7 dengan PM2
+## Deploy ke VPS dengan PM2
 
-```powershell
+Konfigurasi ada di [`ecosystem.config.cjs`](ecosystem.config.cjs): 1 instance, heap dibatasi 128 MB, restart otomatis jika RAM > 180 MB atau crash.
+
+```bash
+# Sekali saja: install PM2 + rotasi log agar disk tidak penuh
 npm install -g pm2
-pm2 start src/index.js --name kirana
+pm2 install pm2-logrotate
+pm2 set pm2-logrotate:max_size 5M
+pm2 set pm2-logrotate:retain 5
+
+# Setup bot
+git clone https://github.com/mhazm/kirana-bloosoms.git kirana && cd kirana
+npm ci --omit=dev
+cp .env.example .env && nano .env
+npm run deploy
+
+# Jalankan & aktifkan auto-start saat VPS reboot
+pm2 start ecosystem.config.cjs
 pm2 save
+pm2 startup   # jalankan perintah yang dicetak olehnya
 ```
+
+Perintah harian:
+
+| Perintah | Fungsi |
+| --- | --- |
+| `pm2 logs kirana` | Lihat log |
+| `pm2 monit` | Pantau CPU & RAM |
+| `pm2 restart kirana` | Restart |
+| `git pull && npm ci --omit=dev && pm2 restart kirana` | Update ke versi terbaru |
+
+> Jangan menaikkan `instances` di atas 1, karena embed dan notifikasi akan terkirim ganda.
 
 ## Struktur
 
